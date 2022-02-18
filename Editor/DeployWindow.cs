@@ -37,7 +37,7 @@ public class DeployWindow : EditorWindow {
   }
 
   void LoadSettings() {
-    string settingsPath = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.conf"));
+    string settingsPath = Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.json");
     try {
       deploySettings = (DeploySettings)JsonUtility.FromJson(File.ReadAllText(settingsPath), typeof(DeploySettings));
     }
@@ -47,7 +47,7 @@ public class DeployWindow : EditorWindow {
   }
 
   void SaveSettings(object obj) {
-    string settingsPath = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.conf"));
+    string settingsPath = Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.json");
     string settingsRaw = JsonUtility.ToJson(obj);
     File.WriteAllText(settingsPath, settingsRaw);
     AssetDatabase.Refresh();
