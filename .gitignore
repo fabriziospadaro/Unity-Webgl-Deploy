@@ -1,3 +1,7 @@
 .DS_Store
 Runtime/deployCfg.json
 Runtime/deployCfg.json.meta
+Scenes/
+Scenes.meta
+WebDeploy/
+WebDeploy.meta

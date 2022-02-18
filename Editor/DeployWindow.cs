@@ -37,15 +37,18 @@ public class DeployWindow : EditorWindow {
   }
 
   void LoadSettings() {
-    string settingsPath = $"{Application.dataPath}/Runtime/deployCfg.json";
+    string settingsPath = $"{Application.dataPath}/WebDeploy/deployCfg.json";
     try {
       deploySettings = (DeploySettings)JsonUtility.FromJson(File.ReadAllText(settingsPath), typeof(DeploySettings));
     }
-    catch { deploySettings = new DeploySettings(); }
+    catch {
+      deploySettings = new DeploySettings();
+    }
   }
 
   void SaveSettings(object obj) {
-    string settingsPath = $"{Application.dataPath}/Deploy/deployCfg.json";
+    Directory.CreateDirectory($"{Application.dataPath}/WebDeploy");
+    string settingsPath = $"{Application.dataPath}/WebDeploy/deployCfg.json";
     string settingsRaw = JsonUtility.ToJson(obj);
     File.WriteAllText(settingsPath, settingsRaw);
     AssetDatabase.Refresh();
