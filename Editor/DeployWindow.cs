@@ -237,8 +237,7 @@ public class DeployWindow : EditorWindow {
   }
 
   void CreateNgnixConf() {
-   
-    string rawConf = File.ReadAllText($"{Application.dataPath}/Deploy/ngnix.conf");
+    string rawConf = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Runtime/ngnix.conf"));
 
     rawConf = rawConf.Replace("*SERVER_NAME", deploySettings.domain + " " + "www." + deploySettings.domain);
     rawConf = rawConf.Replace("*LOCATION", "/" + deploySettings.location);
