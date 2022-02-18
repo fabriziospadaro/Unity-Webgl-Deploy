@@ -37,7 +37,7 @@ public class DeployWindow : EditorWindow {
   }
 
   void LoadSettings() {
-    string settingsPath = $"{Application.dataPath}/WebDeploy/deployCfg.json";
+    string settingsPath = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.conf"));
     try {
       deploySettings = (DeploySettings)JsonUtility.FromJson(File.ReadAllText(settingsPath), typeof(DeploySettings));
     }
@@ -47,8 +47,7 @@ public class DeployWindow : EditorWindow {
   }
 
   void SaveSettings(object obj) {
-    Directory.CreateDirectory($"{Application.dataPath}/WebDeploy");
-    string settingsPath = $"{Application.dataPath}/WebDeploy/deployCfg.json";
+    string settingsPath = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.conf"));
     string settingsRaw = JsonUtility.ToJson(obj);
     File.WriteAllText(settingsPath, settingsRaw);
     AssetDatabase.Refresh();
@@ -237,7 +236,7 @@ public class DeployWindow : EditorWindow {
   }
 
   void CreateNgnixConf() {
-    string rawConf = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Runtime/ngnix.conf"));
+    string rawConf = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/ngnix.conf"));
 
     rawConf = rawConf.Replace("*SERVER_NAME", deploySettings.domain + " " + "www." + deploySettings.domain);
     rawConf = rawConf.Replace("*LOCATION", "/" + deploySettings.location);
