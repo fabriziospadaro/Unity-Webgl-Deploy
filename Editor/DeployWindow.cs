@@ -37,7 +37,7 @@ public class DeployWindow : EditorWindow {
   }
 
   void LoadSettings() {
-    string settingsPath = $"{Application.dataPath}/Deploy/deployCfg.json";
+    string settingsPath = $"{Application.dataPath}/Runtime/deployCfg.json";
     try {
       deploySettings = (DeploySettings)JsonUtility.FromJson(File.ReadAllText(settingsPath), typeof(DeploySettings));
     }
