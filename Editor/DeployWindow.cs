@@ -50,7 +50,6 @@ public class DeployWindow : EditorWindow {
     string settingsPath = Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.json");
     string settingsRaw = JsonUtility.ToJson(obj);
     File.WriteAllText(settingsPath, settingsRaw);
-    AssetDatabase.Refresh();
   }
 
   void OnGUI() {
