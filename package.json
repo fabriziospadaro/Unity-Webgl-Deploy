@@ -1,6 +1,6 @@
 {
   "name": "com.spadaro.webgl-deploy",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "displayName": "Webgl Deploy",
   "description": "This tool allows you to fast deploy a build to a server via ssh",
   "unity": "2019.1",
