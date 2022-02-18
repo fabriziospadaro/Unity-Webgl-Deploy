@@ -1,0 +1,21 @@
+{
+  "name": "com.spadaro.webgl-deploy",
+  "version": "1.0.0",
+  "displayName": "Webgl Deploy",
+  "description": "This tool allows you to fast deploy a build to a server via ssh",
+  "unity": "2019.1",
+  "unityRelease": "0b5",
+  "dependencies": {},
+  "keywords": [
+    "webgl",
+    "deploy",
+    "fast deploy",
+    "webgl deploy",
+    "build deploy"
+  ],
+  "author": {
+    "name": "Fabrizio Spadaro",
+    "email": "work.fabriziospadaro@gmail.com",
+    "url": "https://www.nerosadventure.gg"
+  }
+}
