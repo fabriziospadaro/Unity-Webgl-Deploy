@@ -148,7 +148,7 @@ public class DeployWindow : EditorWindow {
     GUI.backgroundColor = Color.red;
     if(GUILayout.Button("Purge Build")) {
       EditorUtility.DisplayProgressBar("Build", "Purging build...", 1);
-      PurgeCache();
+      PurgeBuild();
     }
     if(GUILayout.Button("Purge Ngnix conf")) {
       EditorUtility.DisplayProgressBar("Ngnix", "Purging ngnix conf...", 1);
