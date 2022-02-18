@@ -12,7 +12,6 @@ struct DeploySettings {
   public string ipServer;
   public string appName;
   public string deployUsername;
-  public string deployRootPath;
   public string deployFolder;
   public string domain;
   public string location;
@@ -72,7 +71,6 @@ public class DeployWindow : EditorWindow {
     GUILayout.Space(5);
     deploySettings.ipServer = EditorGUILayout.TextField("Ip server:", deploySettings.ipServer);
     deploySettings.deployUsername = EditorGUILayout.TextField("Deploy username:", deploySettings.deployUsername);
-    deploySettings.deployRootPath = EditorGUILayout.TextField("Deploy root path:", deploySettings.deployRootPath);
     deploySettings.deployFolder = EditorGUILayout.TextField("Deploy folder:", deploySettings.deployFolder);
     deploySettings.privateKeyPath = EditorGUILayout.TextField("PrivateKey path:", deploySettings.privateKeyPath);
     EditorGUI.indentLevel--;
@@ -142,11 +140,25 @@ public class DeployWindow : EditorWindow {
       EditorUtility.DisplayProgressBar("Deploy 1/1", "Updating ngnix conf...", 1);
       CreateNgnixConf();
     }
-    if(GUILayout.Button("Purge cache")) {
-      EditorUtility.DisplayProgressBar("Ngnix", "Purging cache...", 1);
-      CreateNgnixConf();
-    }
     EditorUtility.ClearProgressBar();
+    GUILayout.EndHorizontal();
+
+    GUILayout.Space(5);
+    GUILayout.BeginHorizontal();
+    GUI.backgroundColor = Color.red;
+    if(GUILayout.Button("Purge Build")) {
+      EditorUtility.DisplayProgressBar("Build", "Purging build...", 1);
+      PurgeCache();
+    }
+    if(GUILayout.Button("Purge Ngnix conf")) {
+      EditorUtility.DisplayProgressBar("Ngnix", "Purging ngnix conf...", 1);
+      PurgeNginxConf();
+    }
+    if(GUILayout.Button("Purge Build Cache")) {
+      EditorUtility.DisplayProgressBar("Ngnix", "Purging cache...", 1);
+      PurgeCache();
+    }
+    GUI.backgroundColor = Color.white;
     GUILayout.EndHorizontal();
   }
 
@@ -164,7 +176,7 @@ public class DeployWindow : EditorWindow {
 
   //https://gist.github.com/piccaso/d963331dcbf20611b094
   public void Deploy() {
-    string remotePath = $"/{deploySettings.deployRootPath}/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}";
+    string remotePath = $"/home/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}";
     string localPath = Directory.GetCurrentDirectory() + "/" + deploySettings.buildFolderName;
 
     using(var sftp = new SftpClient(ConnInfoFor(deploySettings.deployUsername))) {
@@ -226,6 +238,30 @@ public class DeployWindow : EditorWindow {
     }
   }
 
+  void PurgeNginxConf() {
+    using(var sshclient = new SshClient(ConnInfoFor("root"))) {
+      sshclient.Connect();
+      string echo_NgnixConf = $"rm /etc/nginx/sites-available/{deploySettings.appName}";
+      string ln = $"rm /etc/nginx/sites-available/{deploySettings.appName} /etc/nginx/sites-enabled/{deploySettings.appName}";
+      string restartNginx = "/etc/init.d/nginx reload";
+      using(var cmd = sshclient.CreateCommand($"{echo_NgnixConf} ;{ln}; sleep 1 && {restartNginx}"))
+        cmd.Execute();
+      sshclient.Disconnect();
+    }
+  }
+
+  void PurgeBuild() {
+    string remotePath = $"/home/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}";
+    string localPath = Directory.GetCurrentDirectory() + "/" + deploySettings.buildFolderName;
+
+    using(var sftp = new SftpClient(ConnInfoFor(deploySettings.deployUsername))) {
+      sftp.Connect();
+      if(sftp.Exists(remotePath))
+        DeleteDirectory(sftp, remotePath);
+      sftp.Disconnect();
+    }
+  }
+
   string fullUrl{
     get {
       return deploySettings.location == ""
@@ -239,7 +275,7 @@ public class DeployWindow : EditorWindow {
 
     rawConf = rawConf.Replace("*SERVER_NAME", deploySettings.domain + " " + "www." + deploySettings.domain);
     rawConf = rawConf.Replace("*LOCATION", "/" + deploySettings.location);
-    rawConf = rawConf.Replace("*BUILD_PATH", $"/{deploySettings.deployRootPath}/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}");
+    rawConf = rawConf.Replace("*BUILD_PATH", $"/home/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}");
     rawConf = rawConf.Replace("*ALIAS_ROOT", deploySettings.location == "" ? "root" : "alias");
     using(var sshclient = new SshClient(ConnInfoFor("root"))) {
       sshclient.Connect();
@@ -247,7 +283,7 @@ public class DeployWindow : EditorWindow {
       string ln = $"ln -s /etc/nginx/sites-available/{deploySettings.appName} /etc/nginx/sites-enabled/{deploySettings.appName}";
       string restartNginx = "/etc/init.d/nginx reload";
       using(var cmd = sshclient.CreateCommand($"{echo_NgnixConf} ;{ln}; sleep 1 && {restartNginx}"))
-        EditorUtility.DisplayDialog("Build status", cmd.Execute(), "ok");
+        cmd.Execute();
       sshclient.Disconnect();
     }
   }
