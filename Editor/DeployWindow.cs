@@ -8,7 +8,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 
-struct DeploySettings {
+class DeploySettings {
   public string ipServer;
   public string appName;
   public string deployUsername;
@@ -21,21 +21,26 @@ struct DeploySettings {
   public string cloudFlareZone;
   public string cloudFlareEmail;
   public string cloudFlareKey;
+  public enum Compression { Compressed, Gzip, Brotli };
+  public Compression compression;
 }
 public class DeployWindow : EditorWindow {
   private DeploySettings deploySettings;
 
   [MenuItem("Window/Deploy")]
-  static void Initialize() {
+  static void Initialize()
+  {
     DeployWindow window = (DeployWindow)GetWindow(typeof(DeployWindow));
     window.Show();
   }
 
-  public void OnEnable() {
+  public void OnEnable()
+  {
     LoadSettings();
   }
 
-  void LoadSettings() {
+  void LoadSettings()
+  {
     string settingsPath = Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.json");
     try {
       deploySettings = (DeploySettings)JsonUtility.FromJson(File.ReadAllText(settingsPath), typeof(DeploySettings));
@@ -45,13 +50,15 @@ public class DeployWindow : EditorWindow {
     }
   }
 
-  void SaveSettings(object obj) {
+  void SaveSettings(object obj)
+  {
     string settingsPath = Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/deployCfg.json");
     string settingsRaw = JsonUtility.ToJson(obj);
     File.WriteAllText(settingsPath, settingsRaw);
   }
 
-  void OnGUI() {
+  void OnGUI()
+  {
     EditorGUI.BeginChangeCheck();
 
     ServerInspector();
@@ -64,7 +71,8 @@ public class DeployWindow : EditorWindow {
     ActionsInspector();
   }
 
-  void ServerInspector() {
+  void ServerInspector()
+  {
     GUILayout.BeginVertical("", EditorStyles.helpBox);
     GUILayout.Label("Server settings", EditorStyles.boldLabel);
     EditorGUI.indentLevel++;
@@ -77,7 +85,8 @@ public class DeployWindow : EditorWindow {
     GUILayout.EndVertical();
   }
 
-  void NgnixInspector() {
+  void NgnixInspector()
+  {
     GUILayout.Space(5);
     GUILayout.BeginVertical("", EditorStyles.helpBox);
     GUILayout.Label("Ngnix settings", EditorStyles.boldLabel);
@@ -88,19 +97,22 @@ public class DeployWindow : EditorWindow {
     GUILayout.EndVertical();
   }
 
-  void BuildInspector() {
+  void BuildInspector()
+  {
     GUILayout.Space(5);
     GUILayout.BeginVertical("", EditorStyles.helpBox);
     GUILayout.Label("Build settings", EditorStyles.boldLabel);
     EditorGUI.indentLevel++;
     deploySettings.appName = EditorGUILayout.TextField("App name:", deploySettings.appName);
     deploySettings.buildFolderName = EditorGUILayout.TextField("Build folder name:", deploySettings.buildFolderName);
+    deploySettings.compression = (DeploySettings.Compression)EditorGUILayout.EnumPopup("Compression", deploySettings.compression);
     SceneInspector();
     EditorGUI.indentLevel--;
     GUILayout.EndVertical();
   }
 
-  void CloudFlareInspector() {
+  void CloudFlareInspector()
+  {
     GUILayout.Space(5);
     GUILayout.BeginVertical("", EditorStyles.helpBox);
     GUILayout.Label("CloudFlare settings", EditorStyles.boldLabel);
@@ -112,7 +124,8 @@ public class DeployWindow : EditorWindow {
     GUILayout.EndVertical();
   }
 
-  void ActionsInspector() {
+  void ActionsInspector()
+  {
     GUILayout.Space(10);
     GUILayout.BeginHorizontal();
 
@@ -162,7 +175,8 @@ public class DeployWindow : EditorWindow {
     GUILayout.EndHorizontal();
   }
 
-  void SceneInspector() {
+  void SceneInspector()
+  {
     var oldScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(deploySettings.buildSceneName);
 
     EditorGUI.BeginChangeCheck();
@@ -175,7 +189,8 @@ public class DeployWindow : EditorWindow {
   }
 
   //https://gist.github.com/piccaso/d963331dcbf20611b094
-  public void Deploy() {
+  public void Deploy()
+  {
     string remotePath = $"/home/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}";
     string localPath = Directory.GetCurrentDirectory() + "/" + deploySettings.buildFolderName;
 
@@ -192,7 +207,8 @@ public class DeployWindow : EditorWindow {
   }
 
 
-  void UploadDirectory(SftpClient client, string localPath, string remotePath) {
+  void UploadDirectory(SftpClient client, string localPath, string remotePath)
+  {
     IEnumerable<FileSystemInfo> infos = new DirectoryInfo(localPath).EnumerateFileSystemInfos();
     foreach(FileSystemInfo info in infos) {
       if(info.Attributes.HasFlag(FileAttributes.Directory)) {
@@ -209,7 +225,8 @@ public class DeployWindow : EditorWindow {
     }
   }
 
-  private static void DeleteDirectory(SftpClient client, string path) {
+  private static void DeleteDirectory(SftpClient client, string path)
+  {
     foreach(Renci.SshNet.Sftp.SftpFile file in client.ListDirectory(path)) {
       if((file.Name != ".") && (file.Name != "..")) {
         if(file.IsDirectory) {
@@ -224,21 +241,23 @@ public class DeployWindow : EditorWindow {
     client.DeleteDirectory(path);
   }
 
-  void PurgeCache() {
+  void PurgeCache()
+  {
     using(var httpClient = new HttpClient()) {
-      using(var request = new HttpRequestMessage(new HttpMethod("POST"),$"https://api.cloudflare.com/client/v4/zones/{deploySettings.cloudFlareZone}/purge_cache")) {
+      using(var request = new HttpRequestMessage(new HttpMethod("POST"), $"https://api.cloudflare.com/client/v4/zones/{deploySettings.cloudFlareZone}/purge_cache")) {
         request.Headers.TryAddWithoutValidation("X-Auth-Email", deploySettings.cloudFlareEmail);
         request.Headers.TryAddWithoutValidation("X-Auth-Key", deploySettings.cloudFlareKey);
 
-        request.Content = new StringContent("{\"files\":[\""+ fullUrl +"\"]}");
+        request.Content = new StringContent("{\"files\":[\"" + fullUrl + "\"]}");
         request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-        
+
         httpClient.SendAsync(request);
       }
     }
   }
 
-  void PurgeNginxConf() {
+  void PurgeNginxConf()
+  {
     using(var sshclient = new SshClient(ConnInfoFor("root"))) {
       sshclient.Connect();
       string echo_NgnixConf = $"rm /etc/nginx/sites-available/{deploySettings.appName}";
@@ -250,7 +269,8 @@ public class DeployWindow : EditorWindow {
     }
   }
 
-  void PurgeBuild() {
+  void PurgeBuild()
+  {
     string remotePath = $"/home/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}";
     string localPath = Directory.GetCurrentDirectory() + "/" + deploySettings.buildFolderName;
 
@@ -262,58 +282,70 @@ public class DeployWindow : EditorWindow {
     }
   }
 
-  string fullUrl{
+  string fullUrl {
     get {
+      string extension = "";
+      switch(deploySettings.compression) {
+        case DeploySettings.Compression.Brotli:
+          extension = ".br";
+          break;
+        case DeploySettings.Compression.Gzip:
+          extension = ".gz";
+          break;
+      }
       return deploySettings.location == ""
-        ? $"https://{deploySettings.domain}/Build/Build.data.gz"
-        : $"https://{deploySettings.domain}/{deploySettings.location}/Build/Build.data.gz";
+        ? $"https://{deploySettings.domain}/Build/Build.data${extension}"
+        : $"https://{deploySettings.domain}/{deploySettings.location}/Build/Build.data${extension}";
     }
   }
 
-  void CreateNgnixConf() {
-    string rawConf = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/ngnix.conf"));
+  void CreateNgnixConf()
+{
+  string rawConf = File.ReadAllText(Path.GetFullPath("Packages/com.spadaro.webgl-deploy/Configs/ngnix.conf"));
 
-    rawConf = rawConf.Replace("*SERVER_NAME", deploySettings.domain + " " + "www." + deploySettings.domain);
-    rawConf = rawConf.Replace("*LOCATION", "/" + deploySettings.location);
-    rawConf = rawConf.Replace("*BUILD_PATH", $"/home/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}");
-    rawConf = rawConf.Replace("*ALIAS_ROOT", deploySettings.location == "" ? "root" : "alias");
-    using(var sshclient = new SshClient(ConnInfoFor("root"))) {
-      sshclient.Connect();
-      string echo_NgnixConf = $"echo \"{rawConf}\" > /etc/nginx/sites-available/{deploySettings.appName}";
-      string ln = $"ln -s /etc/nginx/sites-available/{deploySettings.appName} /etc/nginx/sites-enabled/{deploySettings.appName}";
-      string restartNginx = "/etc/init.d/nginx reload";
-      using(var cmd = sshclient.CreateCommand($"{echo_NgnixConf} ;{ln}; sleep 1 && {restartNginx}"))
-        cmd.Execute();
-      sshclient.Disconnect();
-    }
+  rawConf = rawConf.Replace("*SERVER_NAME", deploySettings.domain + " " + "www." + deploySettings.domain);
+  rawConf = rawConf.Replace("*LOCATION", "/" + deploySettings.location);
+  rawConf = rawConf.Replace("*BUILD_PATH", $"/home/{deploySettings.deployUsername}/{deploySettings.deployFolder}/{deploySettings.appName}");
+  rawConf = rawConf.Replace("*ALIAS_ROOT", deploySettings.location == "" ? "root" : "alias");
+  using(var sshclient = new SshClient(ConnInfoFor("root"))) {
+    sshclient.Connect();
+    string echo_NgnixConf = $"echo \"{rawConf}\" > /etc/nginx/sites-available/{deploySettings.appName}";
+    string ln = $"ln -s /etc/nginx/sites-available/{deploySettings.appName} /etc/nginx/sites-enabled/{deploySettings.appName}";
+    string restartNginx = "/etc/init.d/nginx reload";
+    using(var cmd = sshclient.CreateCommand($"{echo_NgnixConf} ;{ln}; sleep 1 && {restartNginx}"))
+      cmd.Execute();
+    sshclient.Disconnect();
+  }
+}
+
+public void Build(Action onSuccess)
+{
+  BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
+  buildPlayerOptions.scenes = new[] { deploySettings.buildSceneName };
+  buildPlayerOptions.locationPathName = deploySettings.buildFolderName;
+  buildPlayerOptions.target = BuildTarget.WebGL;
+  buildPlayerOptions.options = BuildOptions.None;
+
+  BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+  BuildSummary summary = report.summary;
+
+  if(summary.result == BuildResult.Succeeded) {
+    onSuccess();
   }
 
-  public void Build(Action onSuccess) {
-    BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
-    buildPlayerOptions.scenes = new[] { deploySettings.buildSceneName };
-    buildPlayerOptions.locationPathName = deploySettings.buildFolderName;
-    buildPlayerOptions.target = BuildTarget.WebGL;
-    buildPlayerOptions.options = BuildOptions.None;
-
-    BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
-    BuildSummary summary = report.summary;
-
-    if(summary.result == BuildResult.Succeeded) {
-      onSuccess();
-    }
-
-    if(summary.result == BuildResult.Failed) {
-      Debug.Log("Build failed " + summary.ToString());
-    }
+  if(summary.result == BuildResult.Failed) {
+    Debug.Log("Build failed " + summary.ToString());
   }
+}
 
-  public ConnectionInfo ConnInfoFor(string user){
-    return new ConnectionInfo(deploySettings.ipServer, 22, user,
-      new AuthenticationMethod[]{
+public ConnectionInfo ConnInfoFor(string user)
+{
+  return new ConnectionInfo(deploySettings.ipServer, 22, user,
+    new AuthenticationMethod[]{
         new PrivateKeyAuthenticationMethod(user,new PrivateKeyFile[]{
           new PrivateKeyFile(deploySettings.privateKeyPath ,"passphrase")
         }),
-      }
-    );
-  }
+    }
+  );
+}
 }
